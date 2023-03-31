@@ -28,7 +28,7 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
+      emit(UnsplashStateLoading(true));
       final images = await service.getFirst();
       emit(UnsplashStateData(images));
     } catch (_) {
@@ -41,7 +41,8 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
+      emit(UnsplashStateLoading(false));
+      await Future.delayed(const Duration(seconds: 2));
       final images = await service.getNext();
       emit(UnsplashStateData(images));
     } catch (_) {
@@ -54,8 +55,7 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
-      service.clearImages();
+      emit(UnsplashStateLoading(true));
       emit(UnsplashStateEmpty());
     } catch (_) {
       emit(UnsplashStateError());
