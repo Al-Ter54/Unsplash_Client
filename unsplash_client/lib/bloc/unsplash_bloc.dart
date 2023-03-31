@@ -1,0 +1,71 @@
+import 'package:unsplash_client/bloc/unsplash_event.dart';
+import 'package:unsplash_client/bloc/unsplash_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:unsplash_client/service/unsplash_service.dart';
+
+class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
+  UnsplashBloc({
+    required this.service,
+  }) : super(UnsplashStateEmpty()) {
+    on<UnsplashEventInit>(_onInit);
+    on<UnsplashEventFirstLoad>(_onFirstLoad);
+    on<UnsplashEventLoad>(_onLoad);
+    on<UnsplashEventClear>(_onClear);
+    on<UnsplashEventEmulateError>(_onEmulateError);
+  }
+
+  final UnsplashService service;
+
+  Future<void> _onInit(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    emit(UnsplashStateEmpty());
+  }
+
+  Future<void> _onFirstLoad(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    try {
+      emit(UnsplashStateLoading());
+      final images = await service.getFirst();
+      emit(UnsplashStateData(images));
+    } catch (_) {
+      emit(UnsplashStateError());
+    }
+  }
+
+  Future<void> _onLoad(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    try {
+      emit(UnsplashStateLoading());
+      final images = await service.getNext();
+      emit(UnsplashStateData(images));
+    } catch (_) {
+      emit(UnsplashStateError());
+    }
+  }
+
+  Future<void> _onClear(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    try {
+      emit(UnsplashStateLoading());
+      service.clearImages();
+      emit(UnsplashStateEmpty());
+    } catch (_) {
+      emit(UnsplashStateError());
+    }
+  }
+
+  Future<void> _onEmulateError(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    emit(UnsplashStateError());
+  }
+}
