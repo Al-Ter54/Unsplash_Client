@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:unsplash_client/model/unsplash_image.dart';
 
@@ -12,9 +10,9 @@ class UnsplashService {
   final secretKey = "swcuS4mz8qF1C08Qf7LbblkWQM-xWjw_Mh3cGgLbwKA";
   final pageCount = 10;
   int page = 1;
-  final List<UnsplashImage> images = [];
 
   Future<List<UnsplashImage>> _getList() async {
+    final List<UnsplashImage> images = [];
     final response = await dio.get(
       "$baseUrl/photos",
       queryParameters: {
@@ -23,9 +21,8 @@ class UnsplashService {
         "per_page": pageCount
       },
     );
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       final data = response.data;
-      // final decodeData = jsonDecode(data) as List<dynamic>;
       for (var json in data) {
         images.add(UnsplashImage.fromJson(json));
       }
@@ -40,12 +37,6 @@ class UnsplashService {
 
   Future<List<UnsplashImage>> getFirst() async {
     page = 1;
-    images.clear();
     return _getList();
   }
-
-  void clearImages() {
-    images.clear();
-  }
-
 }

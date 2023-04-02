@@ -7,8 +7,35 @@ import 'package:unsplash_client/widget/unsplash_item.dart';
 
 import '../model/unsplash_image.dart';
 
-class UnsplashListPage extends StatelessWidget {
-  const UnsplashListPage({Key? key}) : super(key: key);
+class UnsplashListPage extends StatefulWidget {
+  UnsplashListPage({Key? key}) : super(key: key);
+  final List<UnsplashImage> items = [];
+
+  @override
+  State<UnsplashListPage> createState() => _UnsplashListPageState();
+}
+
+class _UnsplashListPageState extends State<UnsplashListPage> {
+  late ScrollController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ScrollController()..addListener(_loadMore);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_loadMore);
+    super.dispose();
+  }
+
+  void _loadMore() async {
+    final bloc = context.read<UnsplashBloc>();
+    if (_controller.position.extentAfter == 0) {
+      bloc.add(UnsplashEventLoad());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +51,10 @@ class UnsplashListPage extends StatelessWidget {
               child: const Text("Load"),
             ),
             ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventClear()),
+              onPressed: () {
+                widget.items.clear();
+                bloc.add(UnsplashEventClear());
+              },
               child: const Text("Clear"),
             ),
             ElevatedButton(
@@ -49,21 +79,22 @@ class UnsplashListPage extends StatelessWidget {
     required UnsplashBloc bloc,
     required UnsplashState state,
   }) {
-    switch (state.runtimeType) {
-      case UnsplashStateEmpty:
-        return const Center(child: Text("List is empty"));
-      case UnsplashStateLoading:
-        return const Center(child: CircularProgressIndicator());
-      case UnsplashStateError:
-        return const Center(child: Text("Something went wrong"));
-      case UnsplashStateData:
-        return _imageList(
-          bloc: bloc,
-          images: (state as UnsplashStateData).images,
-        );
-      default:
-        return const Text("Wrong state detected?");
+    if (state is UnsplashStateEmpty) {
+      return const Center(child: Text("List is empty"));
     }
+    if (state is UnsplashStateLoading && state.isFirstLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state is UnsplashStateError) {
+      return const Center(child: Text("Something went wrong"));
+    }
+    if (state is UnsplashStateData) {
+      widget.items.addAll(state.images);
+    }
+    return _imageList(
+      bloc: bloc,
+      images: widget.items,
+    );
   }
 
   Widget _imageList({
@@ -77,9 +108,17 @@ class UnsplashListPage extends StatelessWidget {
           bloc.add(UnsplashEventFirstLoad());
         },
         child: ListView.builder(
-            itemCount: images.length,
+            itemCount: images.length + 1,
+            controller: _controller,
             itemBuilder: (context, index) {
-              return UnsplashItem(image: images[index]);
+              return index >= images.length
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : UnsplashItem(image: images[index]);
             }),
       ),
     );
