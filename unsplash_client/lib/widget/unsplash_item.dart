@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:unsplash_client/model/unsplash_image.dart';
 
+import 'full_screen_image.dart';
+
 class UnsplashItem extends StatelessWidget {
   const UnsplashItem({Key? key, required this.image}) : super(key: key);
   final UnsplashImage image;
@@ -13,7 +15,10 @@ class UnsplashItem extends StatelessWidget {
         elevation: 4,
         child: Padding(
           padding: const EdgeInsets.all(0),
-          child: Image.network(image.urls?.small ?? ""),
+          child: FullScreenImage(
+            disposeLevel: DisposeLevel.low,
+            child: Image.network(image.urls?.small ?? ""),
+          ),
         ),
       ),
     );
