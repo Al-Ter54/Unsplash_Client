@@ -1,16 +1,40 @@
 # unsplash_client
 
-A new Flutter project.
+Application receives data from [Unsplash API](https://unsplash.com/) and displays it to the user.
+
+User can get image feed or search for specific image
+
+Data screen has four states:
+- empty state (no data to display)
+- data state (displaying received data)
+- loading state (displaying loader while data is loading)
+- error state (when any error happened)
+
+
+To test states, buttons are added under the search bar at the top of the screen
+
+Image feed and search results support paging on scroll to bottom of current list
+
+When the results run out, the user gets a message at the bottom of the screen
+
+If no data able to display by search query, user see empty state
+
+On tap every image displays on detail screen
+
+Detail screen use hero animation, zoom in/out and can be closed by pull up/down
+
+Queries for receiving data have 2 seconds duration to display loaders
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+On application started user can:
+- load image feed by pressing button "Load"
+- imitate error by pressing button "Get error"
+- search specific images by TextField (min 2 characters)
+- clear all results by pressing button "Clear"
 
-A few resources to get you started if this is your first Flutter project:
+On images loaded user can go to detail page 
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+On detail page user can:
+- zoom image
+- pull up/down to close detail page

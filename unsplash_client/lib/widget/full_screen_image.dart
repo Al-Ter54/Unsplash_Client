@@ -62,7 +62,7 @@ class _FullScreenPageState extends State<FullScreenPage> {
 
   double positionYDelta = 0;
 
-  double opacity = 1;
+  double opacity = 0.8;
 
   double disposeLimit = 150;
 
@@ -103,11 +103,11 @@ class _FullScreenPageState extends State<FullScreenPage> {
 
   setOpacity() {
     double tmp = positionYDelta < 0
-        ? 1 - ((positionYDelta / 1000) * -1)
-        : 1 - (positionYDelta / 1000);
+        ? 0.8 - ((positionYDelta / 1000) * -1)
+        : 0.8 - (positionYDelta / 1000);
 
-    if (tmp > 1) {
-      opacity = 1;
+    if (tmp > 0.8) {
+      opacity = 0.8;
     } else if (tmp < 0) {
       opacity = 0;
     } else {
@@ -125,7 +125,7 @@ class _FullScreenPageState extends State<FullScreenPage> {
     } else {
       setState(() {
         animationDuration = const Duration(milliseconds: 300);
-        opacity = 1;
+        opacity = 0.8;
         positionYDelta = 0;
       });
 
@@ -164,7 +164,7 @@ class _FullScreenPageState extends State<FullScreenPage> {
                 right: 0,
                 child: InteractiveViewer(
                   boundaryMargin: const EdgeInsets.all(20.0),
-                  minScale: 0.1,
+                  minScale: 1,
                   maxScale: 2.0,
                   child: widget.child,
                 ),

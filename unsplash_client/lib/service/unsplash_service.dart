@@ -30,6 +30,26 @@ class UnsplashService {
     return images;
   }
 
+  Future<List<UnsplashImage>> _getSearchList({query = ''}) async {
+    final List<UnsplashImage> images = [];
+    final response = await dio.get(
+      "$baseUrl/search/photos",
+      queryParameters: {
+        "client_id": accessKey,
+        "page": page,
+        "per_page": pageCount,
+        "query": query,
+      },
+    );
+    if(response.statusCode == 200){
+      final data = response.data;
+      for (var json in data["results"]) {
+        images.add(UnsplashImage.fromJson(json));
+      }
+    }
+    return images;
+  }
+
   Future<List<UnsplashImage>> getNext() async {
     ++page;
     return _getList();
@@ -38,5 +58,15 @@ class UnsplashService {
   Future<List<UnsplashImage>> getFirst() async {
     page = 1;
     return _getList();
+  }
+
+  Future<List<UnsplashImage>> getNextSearch({query = ''}) async {
+    ++page;
+    return _getSearchList(query: query);
+  }
+
+  Future<List<UnsplashImage>> getFirstSearch({query = ''}) async {
+    page = 1;
+    return _getSearchList(query: query);
   }
 }
