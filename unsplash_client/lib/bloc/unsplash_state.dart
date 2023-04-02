@@ -4,7 +4,11 @@ abstract class UnsplashState {}
 
 class UnsplashStateEmpty extends UnsplashState {}
 
-class UnsplashStateLoading extends UnsplashState {}
+class UnsplashStateLoading extends UnsplashState {
+  final bool isFirstLoading;
+
+  UnsplashStateLoading(this.isFirstLoading);
+}
 
 class UnsplashStateData extends UnsplashState {
   UnsplashStateData(this.images);

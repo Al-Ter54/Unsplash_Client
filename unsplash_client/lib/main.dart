@@ -49,9 +49,14 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 24,
+        ),
         title: Text(widget.title),
       ),
-      body: const UnsplashListPage(),
+      body: UnsplashListPage(),
     );
   }
 }

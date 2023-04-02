@@ -10,11 +10,14 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     on<UnsplashEventInit>(_onInit);
     on<UnsplashEventFirstLoad>(_onFirstLoad);
     on<UnsplashEventLoad>(_onLoad);
+    on<UnsplashEventFirstSearch>(_onFirstSearch);
+    on<UnsplashEventSearch>(_onSearch);
     on<UnsplashEventClear>(_onClear);
     on<UnsplashEventEmulateError>(_onEmulateError);
   }
 
   final UnsplashService service;
+  bool endOfResults = false;
 
   Future<void> _onInit(
     UnsplashEvent event,
@@ -28,9 +31,14 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
+      emit(UnsplashStateLoading(true));
       final images = await service.getFirst();
-      emit(UnsplashStateData(images));
+      if(images.isEmpty){
+        emit(UnsplashStateEmpty());
+      } else {
+        endOfResults = false;
+        emit(UnsplashStateData(images));
+      }
     } catch (_) {
       emit(UnsplashStateError());
     }
@@ -41,8 +49,51 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
+      emit(UnsplashStateLoading(false));
+      await Future.delayed(const Duration(seconds: 2));
       final images = await service.getNext();
+      if(images.isEmpty){
+        endOfResults = true;
+      }
+        emit(UnsplashStateData(images));
+    } catch (_) {
+      emit(UnsplashStateError());
+    }
+  }
+
+  Future<void> _onFirstSearch(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    try {
+      emit(UnsplashStateLoading(true));
+      final images = await service.getFirstSearch(
+        query: (event as UnsplashEventFirstSearch).query,
+      );
+      if(images.isEmpty){
+        emit(UnsplashStateEmpty());
+      } else {
+        endOfResults = false;
+        emit(UnsplashStateData(images));
+      }
+    } catch (_) {
+      emit(UnsplashStateError());
+    }
+  }
+
+  Future<void> _onSearch(
+    UnsplashEvent event,
+    Emitter<UnsplashState> emit,
+  ) async {
+    try {
+      emit(UnsplashStateLoading(false));
+      await Future.delayed(const Duration(seconds: 2));
+      final images = await service.getNextSearch(
+        query: (event as UnsplashEventSearch).query,
+      );
+      if(images.isEmpty){
+        endOfResults = true;
+      }
       emit(UnsplashStateData(images));
     } catch (_) {
       emit(UnsplashStateError());
@@ -54,8 +105,8 @@ class UnsplashBloc extends Bloc<UnsplashEvent, UnsplashState> {
     Emitter<UnsplashState> emit,
   ) async {
     try {
-      emit(UnsplashStateLoading());
-      service.clearImages();
+      endOfResults = false;
+      emit(UnsplashStateLoading(true));
       emit(UnsplashStateEmpty());
     } catch (_) {
       emit(UnsplashStateError());

@@ -7,8 +7,41 @@ import 'package:unsplash_client/widget/unsplash_item.dart';
 
 import '../model/unsplash_image.dart';
 
-class UnsplashListPage extends StatelessWidget {
-  const UnsplashListPage({Key? key}) : super(key: key);
+class UnsplashListPage extends StatefulWidget {
+  UnsplashListPage({Key? key}) : super(key: key);
+  final List<UnsplashImage> items = [];
+
+  @override
+  State<UnsplashListPage> createState() => _UnsplashListPageState();
+}
+
+class _UnsplashListPageState extends State<UnsplashListPage> {
+  late ScrollController _controller;
+  final TextEditingController _textEditingController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ScrollController()..addListener(_loadMore);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_loadMore);
+    _textEditingController.dispose();
+    super.dispose();
+  }
+
+  void _loadMore() async {
+    final bloc = context.read<UnsplashBloc>();
+    if (_controller.position.extentAfter == 0 && !bloc.endOfResults) {
+      if (_textEditingController.text.length > 2) {
+        bloc.add(UnsplashEventSearch(_textEditingController.text));
+      } else {
+        bloc.add(UnsplashEventLoad());
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +52,59 @@ class UnsplashListPage extends StatelessWidget {
       children: [
         Row(
           children: [
-            ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventFirstLoad()),
-              child: const Text("Load"),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter a search query',
+                  ),
+                  controller: _textEditingController,
+                  onChanged: (value) {
+                    if (value.length >= 2) {
+                      widget.items.clear();
+                      bloc.add(UnsplashEventFirstSearch(value));
+                    } else {
+                      bloc.add(UnsplashEventFirstLoad());
+                    }
+                  },
+                ),
+              ),
+            )
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.items.clear();
+                  _textEditingController.clear();
+                  bloc.add(UnsplashEventFirstLoad());
+                },
+                child: const Text("Load"),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventClear()),
-              child: const Text("Clear"),
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.items.clear();
+                  _textEditingController.clear();
+                  bloc.add(UnsplashEventClear());
+                },
+                child: const Text("Clear"),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventEmulateError()),
-              child: const Text("Get error"),
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () => bloc.add(UnsplashEventEmulateError()),
+                child: const Text("Get error"),
+              ),
             ),
           ],
         ),
@@ -49,21 +124,22 @@ class UnsplashListPage extends StatelessWidget {
     required UnsplashBloc bloc,
     required UnsplashState state,
   }) {
-    switch (state.runtimeType) {
-      case UnsplashStateEmpty:
-        return const Center(child: Text("List is empty"));
-      case UnsplashStateLoading:
-        return const Center(child: CircularProgressIndicator());
-      case UnsplashStateError:
-        return const Center(child: Text("Something went wrong"));
-      case UnsplashStateData:
-        return _imageList(
-          bloc: bloc,
-          images: (state as UnsplashStateData).images,
-        );
-      default:
-        return const Text("Wrong state detected?");
+    if (state is UnsplashStateEmpty) {
+      return const Center(child: Text("List is empty"));
     }
+    if (state is UnsplashStateLoading && state.isFirstLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state is UnsplashStateError) {
+      return const Center(child: Text("Something went wrong"));
+    }
+    if (state is UnsplashStateData) {
+      widget.items.addAll(state.images);
+    }
+    return _imageList(
+      bloc: bloc,
+      images: widget.items,
+    );
   }
 
   Widget _imageList({
@@ -74,12 +150,34 @@ class UnsplashListPage extends StatelessWidget {
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.delayed(const Duration(seconds: 2));
-          bloc.add(UnsplashEventFirstLoad());
+          if (_textEditingController.text.length > 2) {
+            bloc.add(UnsplashEventFirstSearch(_textEditingController.text));
+          } else {
+            bloc.add(UnsplashEventFirstLoad());
+          }
         },
         child: ListView.builder(
-            itemCount: images.length,
+            itemCount: images.length + 1,
+            controller: _controller,
             itemBuilder: (context, index) {
-              return UnsplashItem(image: images[index]);
+              if (index >= images.length && !bloc.endOfResults) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              } else if (index >= images.length && bloc.endOfResults) {
+                return const ColoredBox(
+                  color: Colors.black12,
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Text("End of results"),
+                  ),
+                );
+              } else {
+                return UnsplashItem(image: images[index]);
+              }
             }),
       ),
     );
