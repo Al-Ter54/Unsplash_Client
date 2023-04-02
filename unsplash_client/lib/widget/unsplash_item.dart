@@ -16,7 +16,8 @@ class UnsplashItem extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(0),
           child: FullScreenImage(
-            disposeLevel: DisposeLevel.low,
+            disposeLevel: DisposeLevel.high,
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
             child: Hero(tag: 'hero-image-${image.id}',
             child: Image.network(image.urls?.small ?? "")),
           ),

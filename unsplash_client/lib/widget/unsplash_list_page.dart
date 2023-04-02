@@ -17,6 +17,7 @@ class UnsplashListPage extends StatefulWidget {
 
 class _UnsplashListPageState extends State<UnsplashListPage> {
   late ScrollController _controller;
+  final TextEditingController _textEditingController = TextEditingController();
 
   @override
   void initState() {
@@ -27,13 +28,18 @@ class _UnsplashListPageState extends State<UnsplashListPage> {
   @override
   void dispose() {
     _controller.removeListener(_loadMore);
+    _textEditingController.dispose();
     super.dispose();
   }
 
   void _loadMore() async {
     final bloc = context.read<UnsplashBloc>();
-    if (_controller.position.extentAfter == 0) {
-      bloc.add(UnsplashEventLoad());
+    if (_controller.position.extentAfter == 0 && !bloc.endOfResults) {
+      if (_textEditingController.text.length > 2) {
+        bloc.add(UnsplashEventSearch(_textEditingController.text));
+      } else {
+        bloc.add(UnsplashEventLoad());
+      }
     }
   }
 
@@ -46,20 +52,59 @@ class _UnsplashListPageState extends State<UnsplashListPage> {
       children: [
         Row(
           children: [
-            ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventFirstLoad()),
-              child: const Text("Load"),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter a search query',
+                  ),
+                  controller: _textEditingController,
+                  onChanged: (value) {
+                    if (value.length >= 2) {
+                      widget.items.clear();
+                      bloc.add(UnsplashEventFirstSearch(value));
+                    } else {
+                      bloc.add(UnsplashEventFirstLoad());
+                    }
+                  },
+                ),
+              ),
+            )
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.items.clear();
+                  _textEditingController.clear();
+                  bloc.add(UnsplashEventFirstLoad());
+                },
+                child: const Text("Load"),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                widget.items.clear();
-                bloc.add(UnsplashEventClear());
-              },
-              child: const Text("Clear"),
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  widget.items.clear();
+                  _textEditingController.clear();
+                  bloc.add(UnsplashEventClear());
+                },
+                child: const Text("Clear"),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () => bloc.add(UnsplashEventEmulateError()),
-              child: const Text("Get error"),
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0, left: 4.0, bottom: 8.0),
+              child: ElevatedButton(
+                onPressed: () => bloc.add(UnsplashEventEmulateError()),
+                child: const Text("Get error"),
+              ),
             ),
           ],
         ),
@@ -105,20 +150,34 @@ class _UnsplashListPageState extends State<UnsplashListPage> {
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.delayed(const Duration(seconds: 2));
-          bloc.add(UnsplashEventFirstLoad());
+          if (_textEditingController.text.length > 2) {
+            bloc.add(UnsplashEventFirstSearch(_textEditingController.text));
+          } else {
+            bloc.add(UnsplashEventFirstLoad());
+          }
         },
         child: ListView.builder(
             itemCount: images.length + 1,
             controller: _controller,
             itemBuilder: (context, index) {
-              return index >= images.length
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : UnsplashItem(image: images[index]);
+              if (index >= images.length && !bloc.endOfResults) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              } else if (index >= images.length && bloc.endOfResults) {
+                return const ColoredBox(
+                  color: Colors.black12,
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Text("End of results"),
+                  ),
+                );
+              } else {
+                return UnsplashItem(image: images[index]);
+              }
             }),
       ),
     );
